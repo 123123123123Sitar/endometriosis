@@ -143,9 +143,3 @@ pip install -r requirements.txt
 ```
 
 Raw corpus files and quote-bearing model outputs are intentionally absent.
-
-## Data and ethics
-
-Do not publish raw patient text, usernames, API keys, or generated outputs
-containing verbatim quotes. The repository intentionally includes only a
-fictional example under `examples/`; the original corpus is not redistributed.
