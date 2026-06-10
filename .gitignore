@@ -1,0 +1,28 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# User data and generated results are local only.
+input/*
+!input/.gitkeep
+output/*
+!output/.gitkeep
+
+# Advanced research workflow data and generated artifacts.
+research/data/*
+!research/data/.gitkeep
+research/outputs/*
+!research/outputs/.gitkeep
+research/eval/*
+!research/eval/.gitkeep
+!research/eval/young_2015_themes.json
+research/manuscript/figures/
+research/manuscript/tables/
+research/manuscript/*.aux
+research/manuscript/*.bbl
+research/manuscript/*.blg
+research/manuscript/*.log
+research/manuscript/*.out
+research/manuscript/*.pdf

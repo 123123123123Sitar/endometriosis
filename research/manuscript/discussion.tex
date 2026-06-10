@@ -1,0 +1,83 @@
+\section{Discussion}
+
+This pilot extends the 2024 GPT-4 abstract in a narrower but more
+auditable direction than originally planned. The main empirical change
+is corpus retrieval: the mentor-provided Pushshift-format r/Endo archive
+contains far more analyzable material than the 2024 abstract's reported
+1{,}986 posts, even after restriction to the overlapping 2018-02-07 to
+2022-12-31 window. The model comparison we initially intended could not
+be completed under free-tier Gemini limits, so the present claim is not
+``two models independently recovered the same themes.'' The defensible
+claim is instead that a single contemporary extractor, run over 74
+large corpus chunks and checked by two independent judge models, recovers
+a stable set of treatment- and care-related themes that can be audited
+against source quotes and prior qualitative literature.
+
+The strongest result is within-run recurrence. All 20 final themes were
+supported by at least 40 of 74 disjoint chunks, and the highest-support
+themes appeared in nearly every slice of the sample. This matters
+because a theme that reappears across many independently processed
+chunks is less likely to be a one-off artifact of a single prompt
+completion. Chunk-support is not a substitute for cross-model
+agreement, but it is a useful single-extractor robustness signal and is
+more transparent than treating the final reduced theme list as a flat
+set of equally supported findings.
+
+The validation stack also clarifies where the current run is weak.
+Rotating LLM-as-judge scores were high, especially for faithfulness and
+clinical relevance, but quote grounding was only 35\% by exact-match
+and BM25 retrieval. Some of that gap is expected because embedding-based
+semantic grounding was disabled, and because the reduce step may carry
+lightly edited quotes forward. Still, the low lexical grounding rate is
+important: the judge scores should not be read as proof that every
+supporting quote is audit-ready. In a revision intended for submission,
+the quote fields should either be re-grounded with semantic retrieval or
+manually replaced with verified paraphrases before publication.
+
+The Young~2015 anchor results separate broad convergence from
+fine-grained online-community topics. Nine of 20 final themes aligned
+lexically with the prior qualitative synthesis, including diagnostic
+delay, medical dismissal, chronic pain, sexual dysfunction, fertility
+concerns, psychological impact, and peer support. Themes that did not
+align, such as laparoscopic excision, GnRH-based management,
+post-operative recovery, recurrence after surgery, pelvic floor
+therapy, dietary changes, bowel involvement, hysterectomy, specialist
+access, and adenomyosis comorbidity, are not automatically novel
+findings. They are more precise treatment-management topics than the
+Young~2015 theme set was designed to encode. Their value is practical:
+they suggest concrete issues clinicians and researchers can ask about
+when discussing endometriosis care with patients.
+
+The most clinically useful themes are therefore not necessarily the
+highest composite-reliability themes. Diagnostic delay and medical
+dismissal are both highly reliable and already well represented in the
+literature. In contrast, specialist access, pelvic floor dysfunction,
+post-operative recovery, and adenomyosis comorbidity score lower
+because they do not match the Young anchor or have weaker lexical quote
+grounding, yet they still appear across many chunks and may be
+important prompts for future qualitative review. The composite score
+should be interpreted as a triage aid for human review, not a final
+truth label.
+
+This study is best understood as a reproducibility and methods pilot.
+It shows that a low-budget, single-extractor workflow can produce a
+traceable theme table, preserve intermediate chunk-level outputs, and
+attach multiple reliability signals to every final theme. It also shows
+where such a workflow falls short: cross-model agreement, prompt
+paraphrase stability, high-temperature stability, and human
+patient/clinician review are still absent. A funded follow-up should
+run a second extractor on the same frozen sample, repeat the prompt-B
+and temperature-stability sweeps, and calibrate Sonnet/Opus judge
+scores against human ratings.
+
+Several limitations bound the strength of the findings. The analysis is
+restricted to r/Endo because r/endometriosis was not present in the
+mentor-provided archive, and the archive ends on 2022-12-31, leaving the
+2023-01 to 2024-10-31 portion of the published window unanalyzed. Reddit
+users are self-selected, English-speaking, and more digitally engaged
+than the broader endometriosis population. The original 2024 GPT-4 run
+could not be reproduced without an OpenAI credential. Finally, although
+we now preserve the subagent protocol for reruns, the exact interactive
+subagent messages from the completed run were not captured as a
+first-class artifact. Future runs should log those prompts before any
+subagent work begins.

@@ -1,0 +1,15 @@
+requests>=2.31
+PyYAML>=6.0
+python-dotenv>=1.0
+anthropic>=0.40
+google-generativeai>=0.8
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.4
+rank_bm25>=0.2.2
+matplotlib>=3.8
+tqdm>=4.66
+tenacity>=8.2
+jsonschema>=4.21
+json-repair>=0.30
+zstandard>=0.22

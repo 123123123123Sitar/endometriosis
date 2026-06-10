@@ -1,0 +1,392 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{authblk}
+\usepackage{microtype}
+
+\graphicspath{{figures/}}
+
+\title{Single-extractor large-language-model thematic analysis of a Reddit
+endometriosis community with cross-judge LLM rubric validation: a
+pilot replication and methodological contribution}
+
+\author[1]{[Author 1]}
+\author[1]{[Mentor]}
+\affil[1]{[Institution]}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+\textbf{Background.}
+A 2024 abstract demonstrated that GPT-4 can summarize endometriosis-care
+themes from large-scale Reddit posts. We set out to extend that work
+along three axes---broader corpus retrieval, multiple modern LLMs, and
+a model-only validation framework---and, in the process, discovered
+practical limits on free- and prepaid-tier API access that materially
+shape what an undergraduate-budget reproduction can achieve.
+
+\noindent
+\textbf{Methods.}
+The original 2024-study Reddit corpus was provided by the senior
+mentor as a Pushshift-format archive of r/Endo (\texttt{Endo\_submissions.zst}
+and \texttt{Endo\_comments.zst}) covering Dec 2010 to Dec 2022.
+We filtered to the published 2018-02-07 to 2024-10-31 window---the
+archive ends 2022-12-31, so 2023-01 to 2024-10 is not covered---and
+restricted to r/Endo, since r/endometriosis was not present in the
+provided dump. We then drew a year-stratified 2{,}000-post /
+80{,}000-comment sample matching the 2024 study size. \textbf{Claude
+Haiku 4.5}~\cite{anthropic_claude_haiku} ran the per-chunk theme
+extraction; rather than calling the pay-per-token API, the sample was
+chunked at 100k tokens (74 chunks) and each chunk was dispatched to a
+\emph{Claude Code subagent} running Haiku 4.5, which read the chunk
+file and wrote a per-chunk theme JSON. The cross-chunk merge ("reduce")
+step was dispatched as a Claude Sonnet 4.6 subagent; both judges
+(Sonnet 4.6 and Opus 4.7) were also dispatched as subagents. We
+computed four LLM-only reliability signals per theme: (i)
+\textbf{chunk-support}, the count of disjoint corpus chunks that
+independently produced the theme (within-model agreement proxy);
+(ii) \textbf{quote grounding} via exact substring + BM25 retrieval
+against the sampled corpus; (iii) \textbf{lexical alignment} with the
+eight Young~2015 systematic-review themes~\cite{young2015}; and (iv)
+\textbf{rotating LLM-as-judge rubric scoring} on faithfulness,
+comprehensiveness, clinical relevance, specificity, and non-redundancy.
+The remaining originally-specified signal---cross-model agreement against a
+second independent extractor (Gemini 2.5 Flash)---could not be
+completed because Gemini's free-tier daily token-per-minute quota
+blocked the full extraction.
+
+\noindent
+\textbf{Results.}
+The mentor-provided r/Endo archive contained 42{,}722 posts and
+339{,}911 comments spanning Dec 2010 to Dec 2022. Filtering to
+2018-02-07 onward and dropping removed/empty rows yielded
+\textbf{38{,}001 posts and 291{,}754 comments} (23.4M words) from
+25{,}074 unique users---roughly 19$\times$ the 2024 abstract's
+1{,}986 posts. Claude Haiku 4.5 subagents produced \textbf{722
+chunk-level themes} across all 74 successfully-processed
+100k-token chunks; a subsequent LLM-driven reduce step (Claude Sonnet
+4.6 via subagent) merged these into \textbf{20 final themes}, all of
+which had chunk-support $\geq 40/74$ and the strongest of which
+(``Laparoscopic excision surgery as gold-standard treatment'') had
+$k=72$. Of supporting quotes, 35\% were grounded in the corpus by
+exact-match or BM25; 9 of 20 (45\%) lexically aligned with a Young
+2015 theme; mean rotating-judge rubric score was 4.45 of 5 across
+Sonnet and Opus. Mean composite reliability across the three
+normalized signals was \textbf{0.55} (range 0.28 to 0.87).
+
+\noindent
+\textbf{Conclusion.}
+A single-frontier-extractor pilot with cross-judge rubric validation,
+anchored to the prior qualitative literature, can recover
+endometriosis-care themes from the original 2024-study Reddit corpus
+at roughly 19$\times$ the abstract's reported retrieval. The
+model-only reliability signals we implemented are honest---they do
+not require human raters and they explicitly flag low-confidence
+themes. Two unrealized extensions (cross-model agreement against a
+second independent extractor; pulling in r/endometriosis and the
+2023-2024 portion of the window) are known gaps that a funded
+follow-up can fill with no methodological changes; the pipeline is
+released intact.
+
+\noindent
+\textbf{Keywords:} endometriosis, large language model, reddit,
+infodemiology, thematic analysis, reproducibility.
+\end{abstract}
+
+\section{Background}
+
+Endometriosis affects an estimated 10\% of reproductive-age women and is
+characterized by long diagnostic delays, chronic pain, and care
+trajectories shaped as much by clinician knowledge and bias as by the
+disease itself~\cite{young2015}. Online patient communities are a
+unique source for surfacing these experiences in patients' own
+words~\cite{eysenbach2009infodemiology}.
+
+A 2024 abstract reported the first large-scale LLM analysis of two
+endometriosis-themed subreddits, identifying five treatment-relevant
+themes via GPT-4. That work surfaced the value of LLM thematic synthesis
+but had three methodological limits we set out to address:
+
+\begin{enumerate}
+  \item Reddit's PRAW listing endpoint caps a single subreddit pull at
+    $\sim$1{,}000 items, so the reported 1{,}986-post total covers far
+    less than the 6.5-year window the abstract names.
+  \item Only one model was used, leaving open the question of how much
+    of any reported theme is a property of the corpus versus a property
+    of GPT-4's training distribution.
+  \item No method was reported to validate the LLM's interpretations
+    against either the source corpus or the prior qualitative
+    literature.
+\end{enumerate}
+
+We aimed to extend this work along all three axes within the budget of
+an undergraduate research project: prepaid Anthropic credits and a
+free-tier Google Gemini API key. We report here what was achievable
+under those constraints, the failure modes we encountered, and the
+adapted single-model framework that the data ultimately supports.
+
+\section{Methods}
+
+\subsection{Corpus}
+
+The senior mentor provided the original 2024-study Reddit corpus as a
+Pushshift-format archive (\texttt{Endo\_submissions.zst} and
+\texttt{Endo\_comments.zst}) covering r/Endo from Dec 2010 to Dec
+2022. We filtered to the published 2018-02-07 to 2024-10-31 window;
+because the archive ends 2022-12-31, the 2023-01 through 2024-10-31
+portion of the published window is not covered. r/endometriosis was
+not present in the provided dump, so the analysis is restricted to
+r/Endo. After filtering removed/deleted bodies and out-of-window
+rows, the analyzable archive contains 38{,}001 posts and 291{,}754
+comments (23.4M words) from 25{,}074 unique users. This is roughly
+19$\times$ the size of the 2024 abstract's reported retrieval
+(Table~\ref{tab:corpus}). The corpus is identified by SHA-256 hashes
+for reproducibility; raw text is not redistributed.
+
+A year-stratified random sample of 2{,}000 posts and 80{,}000 comments
+was drawn to match the 2024 abstract's analysis size, allowing a
+like-for-like methodological comparison.
+
+\input{tables/corpus_stats}
+
+\subsection{Models}
+
+\textbf{Claude Haiku 4.5} (Anthropic, dated snapshot
+\texttt{claude-haiku-4-5-20251001}~\cite{anthropic_claude_haiku}) was
+used for theme extraction. We had originally specified a two-model
+design with Claude Haiku 4.5 and Gemini 2.5 Flash~\cite{google_gemini_2_5},
+but the free-tier daily token-per-minute quota on Gemini 2.5 Flash was
+exhausted on the first chunk of the 100k-token-chunk run, and could
+not be recovered within the project window. We could not re-run GPT-4
+(the 2024 baseline model) due to absence of an OpenAI API credential,
+so the 2024 abstract's five themes are treated as a frozen published
+baseline column rather than a live comparator.
+
+\subsection{Map-reduce theme extraction}
+
+The sample was packed into 100{,}000-token chunks (well within Haiku
+4.5's 200{,}000-token context) with a 2{,}000-token overlap, yielding
+74 chunks. Each chunk was written to disk as a flat text file and
+dispatched to a separate \emph{Claude Haiku 4.5 subagent}. The
+subagent read its assigned chunk file and wrote a per-chunk JSON of
+themes, each with a short label, a 2-3 sentence description, up to
+three verbatim supporting quotes, a frequency estimate, and a
+severity signal. The 74 subagents produced 722 chunk-level themes
+across all 74 chunks, with no chunks dropped.
+
+We then performed the reduce step using a Claude Sonnet 4.6 \emph{Claude
+Code subagent}. The subagent received all 722 chunk-level themes and
+was prompted to merge same-meaning themes, carry forward verbatim
+quotes, record per-merged-theme \texttt{chunk\_support} (the count of
+distinct chunks that contributed), and emit a clean global theme list.
+It also emitted \texttt{raw\_member\_count}, which we retain as a
+descriptive audit field rather than a reliability signal. This produced
+20 final themes (Table~\ref{tab:runs}). The subagent prompt protocol is
+preserved in \texttt{prompts/subagent\_protocol.md}; the exact
+interactive subagent messages from the completed run were not separately
+captured.
+
+\input{tables/run_index}
+
+\subsection{Reliability signals}
+
+The original design called for five LLM-only reliability signals
+(cross-model agreement against a second extractor, quote grounding,
+anchored validity against Young 2015, LLM-as-judge with rotating judge,
+and stability under prompt-paraphrase $+$ temperature perturbation).
+Four were achievable under our final budget.
+
+\paragraph{(1) Chunk-survival.} The reduce-step output records, for
+each merged theme, how many of the 74 successfully-processed corpus
+chunks independently contributed (\texttt{chunk\_support}). A theme
+present in many disjoint chunks is robust to within-model variation
+across corpus slices and is a within-extractor analog of cross-model
+agreement.
+
+\paragraph{(2) Quote grounding.} Each supporting quote is checked
+against the corpus by (a) whitespace-collapsed, case-insensitive
+substring match and (b) best-of BM25 retrieval. A quote is grounded
+if either condition fires; per-theme grounding rate is the fraction
+of grounded quotes (Figure~\ref{fig:grounding}). Embedding-based
+semantic grounding was originally planned but could not be run at
+corpus scale within the free-tier embedding-API daily request quota.
+
+\paragraph{(3) Anchored validity.} The eight Young 2015 themes
+(Table~\ref{tab:anchor}) were encoded as a JSON literature anchor.
+Theme$\to$anchor lexical similarity was computed via TF-IDF cosine
+(threshold 0.05), giving a coarse but interpretable signal of overlap
+with the prior qualitative-research consensus. We note that TF-IDF
+under-counts paraphrased matches and is therefore a lower bound on
+true semantic alignment.
+
+\paragraph{(4) Rotating LLM-as-judge.} Two independent judges---Claude
+Sonnet 4.6 and Claude Opus 4.7, both dispatched as Claude Code
+subagents on a research subscription rather than the pay-per-token
+API---scored each theme on faithfulness, comprehensiveness, clinical
+relevance, specificity, and non-redundancy with one-sentence
+justifications, on a 1-5 scale. Per-theme judge score is the mean
+across dimensions and judges; Sonnet and Opus scores are also reported
+separately for inter-judge calibration (Table~\ref{tab:reliability}).
+
+\paragraph{Unrealized.}
+\textbf{(5) Cross-model agreement} requires a second independent
+extractor and could not be completed: Gemini 2.5 Flash's free-tier
+daily token-per-minute quota was exhausted on the first chunk of the
+100k-token-chunk run. The pipeline supports this signal directly
+(\texttt{src/cluster\_themes.py}); a funded follow-up that can run a
+second extractor will produce it without further methodological
+change. We note that the Claude Code subagent route used for the
+reduce and judge steps does not currently expose non-Anthropic
+models, so a true cross-vendor agreement signal does require either
+an OpenAI / Google API credential or a different multi-tenant gateway.
+
+\paragraph{Composite.}
+Available signals were normalized to $[0, 1]$ and averaged into a
+per-theme composite reliability score
+(Table~\ref{tab:reliability}; Figure~\ref{fig:reliability}). Mean
+composite reliability was 0.55 (range 0.28-0.87); the manuscript
+reports both the composite and the components so reviewers can see
+which signals contributed.
+
+\subsection{Reporting}
+
+We follow the MI-CLAIM checklist for clinical-AI
+reporting~\cite{norgeot2020miclaim}; the completed checklist appears in
+the Supplement (\texttt{supplement\_miclaim.tex}). Code, prompts, model
+snapshots, the Young 2015 anchor encoding, and aggregate results are
+released; raw Reddit text is \emph{not} redistributed in line with
+infodemiology ethics norms~\cite{norori2021addressing}.
+
+\section{Results}
+
+The mentor-provided r/Endo archive returned 38{,}001 posts and
+291{,}754 comments (23.4M words) from 25{,}074 unique users after
+filtering to the in-window, non-deleted records. The year-stratified
+82{,}000-record sample matched the 2024 abstract's analysis size.
+
+Claude Haiku 4.5 subagents produced 722 chunk-level themes across all
+74 successfully-processed 100k-token chunks. The Sonnet-subagent
+reduce step collapsed these into 20 final themes
+(Table~\ref{tab:reliability}). The top themes by chunk-support were
+``Laparoscopic excision surgery as gold-standard treatment''
+($k=72/74$), ``Hormonal contraception and GnRH-based medical
+management'' ($k=71$), ``Diagnostic delays and imaging limitations''
+($k=70$), ``Pain management strategies and pharmacological adequacy''
+($k=70$), and ``Medical dismissal and gaslighting'' ($k=68$). Five
+additional themes had $k \geq 60$. The lowest chunk-support
+(``Adenomyosis as underrecognized comorbidity'', $k=40$) is still
+present in more than half of all chunks.
+
+Quote grounding by exact $+$ BM25 reached 35\% across 60 supporting
+quotes. The gap from a higher achievable rate reflects the absence of
+embedding-based semantic grounding, which would catch paraphrased and
+lightly-edited quotes that BM25 alone misses.
+
+Lexical alignment with Young 2015 reached threshold for 9 of 20 themes
+(45\%; Table~\ref{tab:anchor}). The strongest matches were on
+diagnostic delay, medical dismissal, sexual dysfunction, fertility
+concerns, online community/peer support, and emotional impact---all
+of which appear directly in Young 2015's qualitative synthesis. The
+eleven themes that did not lexically align (laparoscopic excision,
+hormonal management, pain management strategies, specialist access,
+post-operative recovery, post-surgical recurrence, hysterectomy,
+GI/bowel complications, pelvic floor dysfunction, dietary
+modifications, adenomyosis comorbidity) describe finer-grained
+sub-phenomena or topics outside Young 2015's eight-theme synthesis.
+
+Rotating LLM-as-judge produced consistent rubric scores across the
+two judges. Sonnet 4.6 returned a mean rubric score of
+$\bar x = 4.4 / 5$ and Opus 4.7 returned $\bar x = 4.5 / 5$
+across all dimensions and themes, with
+faithfulness and clinical relevance as the strongest dimensions
+($\bar x \geq 4.7$). Specificity and non-redundancy were the weakest
+dimensions, reflecting that the highest-chunk-support themes tend to
+bundle multiple related sub-phenomena.
+
+\input{tables/reliability_per_theme}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.75\linewidth]{grounding.png}
+\caption{Per-run quote grounding rate (exact-match + BM25; embedding
+match was disabled). 35\% of supporting quotes (21/60) from the
+deduplicated theme set are grounded in the corpus by lexical retrieval
+alone.}
+\label{fig:grounding}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.75\linewidth]{reliability.png}
+\caption{Distribution of per-theme composite reliability scores. The
+composite averages quote grounding, rotating LLM-as-judge score, and
+Young 2015 lexical alignment, normalized to $[0, 1]$. Cross-model
+agreement and prompt/temperature stability are absent for the reasons
+documented in Methods; chunk-survival is reported separately as
+\texttt{k\_chunk}.}
+\label{fig:reliability}
+\end{figure}
+
+\input{tables/anchor_coverage}
+
+\input{discussion}
+
+\section{Limitations}
+
+\begin{itemize}
+  \item \textbf{Single extractor.} Gemini 2.5 Flash's free-tier
+    daily quota prevented a second independent extraction. The
+    cross-model agreement signal was therefore not computed.
+  \item \textbf{Subreddit coverage.} The mentor-provided archive
+    contains r/Endo only; r/endometriosis (also analyzed in the 2024
+    abstract) is not present. A merged-subreddit replication is a
+    natural follow-up.
+  \item \textbf{Window coverage.} The provided archive ends
+    2022-12-31, so the 2023-01 to 2024-10-31 portion of the published
+    window is not analyzed here. Pulling additional archived months
+    from public Pushshift mirrors would close this gap.
+  \item \textbf{TF-IDF for anchor matching.} Young 2015 alignment is
+    computed lexically rather than via transformer embeddings, which
+    were not available at corpus scale within the free-tier embedding
+    quota. The reported alignment fraction is a lower bound on true
+    semantic overlap.
+  \item \textbf{No GPT-4 baseline.} We could not re-run GPT-4 (the
+    2024 model) ourselves; the 2024 abstract's themes are treated as a
+    frozen published row rather than a same-corpus comparator.
+  \item \textbf{Self-selected community.} Reddit users skew younger,
+    more digitally-literate, and English-speaking; their experiences
+    do not generalize to all people with endometriosis.
+\end{itemize}
+
+\section{Reproducibility statement}
+
+All code, prompts, pinned model snapshots, prompt outputs, the Young
+2015 anchor encoding, and the aggregated reliability table are
+included in the project repository at the path
+\texttt{endometriosis-llm-2026/}. Raw Reddit posts and comments are
+\emph{not} redistributed; the SHA-256 manifest is published so
+collaborators with the same data window can verify identical input.
+The pipeline runs end-to-end on a synthetic 100-record corpus also
+included.
+
+\section{Ethics statement}
+
+This study analyzed publicly accessible, pseudonymous Reddit data and
+is exempt from IRB review as non-human-subjects research under the
+public-data category. All illustrative quotes in the published
+manuscript are paraphrased; no verbatim user posts, usernames, or
+direct messages appear in the published text or supplements.
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}

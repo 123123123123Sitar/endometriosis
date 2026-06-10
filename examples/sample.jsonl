@@ -1,0 +1,2 @@
+{"id":"example-post","title":"Example post","selftext":"This fictional record demonstrates the expected Reddit JSONL format.","author":"example"}
+{"id":"example-comment","body":"The pipeline also extracts comment body text.","author":"example"}

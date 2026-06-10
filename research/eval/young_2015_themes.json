@@ -1,0 +1,25 @@
+{
+  "source": {
+    "citation": "Young K, Fisher J, Kirkman M. Women's experiences of endometriosis: a systematic review and synthesis of qualitative research. J Fam Plann Reprod Health Care. 2015 Jul;41(3):225-234.",
+    "pmid": "25183531",
+    "note": "Themes encoded from the abstract + key findings; refine if full text obtained."
+  },
+  "themes": [
+    {"id": "diagnostic_delay", "label": "Diagnostic delay and dismissal",
+     "description": "Women describe long delays before diagnosis, often with their pain dismissed or normalized by clinicians."},
+    {"id": "pain_chronicity", "label": "Living with chronic pain",
+     "description": "Endometriosis pain is chronic, debilitating, and shapes daily life, work, and relationships."},
+    {"id": "emotional_psychological_impact", "label": "Emotional and psychological impact",
+     "description": "Patients report depression, anxiety, frustration, and a sense of being unheard within healthcare."},
+    {"id": "treatment_disappointment", "label": "Treatment disappointment and side effects",
+     "description": "Hormonal therapies and surgeries provide variable, often temporary relief and carry significant side effects; pregnancy is sometimes presented as a treatment, which patients reject."},
+    {"id": "relationships_intimacy", "label": "Effect on relationships and intimacy",
+     "description": "The condition strains romantic, family, and social relationships, including impacts on sexual intimacy and fertility."},
+    {"id": "fertility_reproductive_concerns", "label": "Fertility and reproductive concerns",
+     "description": "Worry about future fertility and reproductive choices is a major psychological burden."},
+    {"id": "knowledge_information_seeking", "label": "Information-seeking and self-advocacy",
+     "description": "Women actively seek information online and from peers, often becoming experts on their own condition due to perceived gaps in clinician knowledge."},
+    {"id": "support_communities", "label": "Online and peer support communities",
+     "description": "Online communities and peer support are valued sources of validation, information, and coping."}
+  ]
+}

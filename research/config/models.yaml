@@ -1,0 +1,53 @@
+# Pinned model snapshots used for the manuscript.
+# Each entry MUST have a dated snapshot — never use floating aliases.
+#
+# Note (2026-05): No OpenAI key available, so the GPT-4 (2024) baseline
+# cannot be re-run. We treat the published abstract themes as a frozen
+# baseline row and document this limitation in Methods.
+
+baseline_2024:
+  provider: openai
+  model: gpt-4-0613
+  display_name: GPT-4 (2024 baseline, frozen)
+  status: not_executable          # see note above
+  source: published_abstract       # Nov 2024 abstract themes used verbatim
+
+modern_2026:
+  - id: claude_haiku_4_5
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+    display_name: Claude Haiku 4.5
+    api_key_env: ANTHROPIC_API_KEY
+    max_tokens_out: 8192
+    pricing_note: "Use prompt caching + Anthropic Message Batches API for ~50% cost reduction."
+
+  - id: gemini_2_5_flash
+    provider: google
+    model: gemini-2.5-flash         # confirm exact dated snapshot at first run
+    display_name: Gemini 2.5 Flash
+    api_key_env: GOOGLE_GENERATIVE_AI_API_KEY
+    max_tokens_out: 8192
+    notes: "Free-tier API key did not have access to Gemini 2.5 Pro; documented as a limitation."
+
+# Original API judge config. The completed manuscript run used Claude Code
+# subagents for judging instead: Sonnet 4.6 and Opus 4.7 scored the single
+# Claude Haiku 4.5 extractor output.
+judges:
+  - claude_haiku_4_5
+  - gemini_2_5_flash
+
+# Embedding model used for cross-LLM theme clustering.
+# Gemini's text-embedding-004 is free-tier and avoids needing OpenAI.
+embeddings:
+  provider: google
+  model: gemini-embedding-001
+  api_key_env: GOOGLE_GENERATIVE_AI_API_KEY
+
+# Run parameters.
+run:
+  temperature_primary: 0.0
+  temperature_stability: 0.7
+  stability_n: 3
+  chunk_tokens: 100000
+  overlap_tokens: 2000
+  current_completed_run: "claude_haiku_4_5 prompt A primary via 74 Claude Code subagents"
