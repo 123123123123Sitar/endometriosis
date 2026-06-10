@@ -135,20 +135,6 @@ The OCR prompt requests transcription only. It does not ask the model to
 summarize, diagnose, or alter source text. OCR can still make mistakes, so
 verify important excerpts against the original file.
 
-## Advanced research workflow
-
-The consolidated command above is the normal entry point. The original 2026
-study code remains available in `research/`, including:
-
-- corpus collection and sampling
-- Anthropic and Gemini theme extraction
-- grounding and cross-model clustering
-- literature anchoring and LLM judging
-- reliability scoring and manuscript table/figure generation
-
-That workflow has more dependencies and requires both Anthropic and Google
-keys. See [`research/REPRODUCE.md`](research/REPRODUCE.md) for its commands:
-
 ```bash
 cd research
 python3 -m venv .venv
